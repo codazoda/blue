@@ -31,6 +31,9 @@ pub fn run() {
             Ok(())
         })
         .on_menu_event(|app, event| match event.id().as_ref() {
+            "new" => {
+                let _ = app.emit("menu-new", ());
+            }
             "open" => {
                 let _ = app.emit("menu-open", ());
             }
@@ -62,6 +65,10 @@ fn build_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     };
 
     // Custom items we want under File
+    let new_item = MenuItemBuilder::new("New")
+        .id("new")
+        .accelerator("CmdOrCtrl+N")
+        .build(app)?;
     let open_item = MenuItemBuilder::new("Open...")
         .id("open")
         .accelerator("CmdOrCtrl+O")
@@ -81,6 +88,7 @@ fn build_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
 
     #[allow(unused_mut)]
     let mut file_menu = SubmenuBuilder::new(app, "File")
+        .item(&new_item)
         .item(&open_item)
         .item(&save_item)
         .item(&save_as_item)

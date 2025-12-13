@@ -10,7 +10,7 @@ Blue reads configuration from a `blue.json` file in the app directory. Options:
 - `background` (string): background color for the editor (default `#0000aa`, Turbo Pascal blue).
 - `foreground` (string): text/caret color (default `#ffff55`, Turbo Pascal yellow).
 - `highlight` (string): accent/highlight color (default `#ffffff`, the previous white foreground).
-- `dark` (string): gray accent color (default `#444444`).
+- `dark` (string): gray accent color (default `#888888`).
 
 Example `blue.json`:
 
@@ -20,7 +20,7 @@ Example `blue.json`:
   "background": "#0000aa",
   "foreground": "#ffff55",
   "highlight": "#ffffff",
-  "dark": "#444444"
+  "dark": "#888888"
 }
 ```
 
@@ -37,5 +37,3 @@ Example `blue.json`:
 - Install JS deps: `npm install`
 - Run the desktop app in dev mode: `npm run tauri dev`
 - For a browser-only preview (no Tauri APIs): `npm run dev` and open the shown Vite URL.
-
-Joel was here.
