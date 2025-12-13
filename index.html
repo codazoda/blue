@@ -13,6 +13,7 @@
       --editor-fg: #ffff55;   /* Turbo Pascal bright yellow */
       --editor-highlight: #ffffff; /* previous foreground (white) */
       --editor-dark: #444444;      /* gray accent */
+      --status-height: 2.25rem;
     }
 
     * {
@@ -31,11 +32,28 @@
       font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
         "Courier New", monospace;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #status {
+      height: var(--status-height);
+      background: var(--editor-bg);
+      color: var(--editor-highlight);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.75rem;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     #editor {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: calc(100vh - var(--status-height));
       padding: 1rem;
       border: none;
       margin: 0;
@@ -65,22 +83,28 @@
   </style>
 </head>
 <body>
-      <textarea id="editor" spellcheck="false"></textarea>
-      <input id="fileInput" type="file" accept="text/*,.txt,.md,.log" />
+  <div id="status" aria-live="polite">
+    <span id="status-filename"></span>
+  </div>
+  <textarea id="editor" spellcheck="false"></textarea>
+  <input id="fileInput" type="file" accept="text/*,.txt,.md,.log" />
 
-      <script type="module">
-        (async function () {
-          const editor = document.getElementById("editor");
-          const fileInput = document.getElementById("fileInput");
-          const defaultConfig = {
-            wordWrap: true,
-            background: "#0000aa",
-            foreground: "#ffff55",
-            highlight: "#ffffff",
-            dark: "#444444",
-          };
+  <script type="module">
+    (async function () {
+      const editor = document.getElementById("editor");
+      const fileInput = document.getElementById("fileInput");
+      const statusFilename = document.getElementById("status-filename");
+      const defaultConfig = {
+        wordWrap: true,
+        background: "#0000aa",
+        foreground: "#ffff55",
+        highlight: "#ffffff",
+        dark: "#444444",
+      };
 
       const INDENT = "\t";
+      const STATUS_FRONT = 15;
+      const STATUS_BACK = 15;
       let currentFilename = "";
       let fileHandle = null;
       let tauriFilePath = null;
@@ -114,6 +138,7 @@
       editor.value = "";
       editor.selectionStart = 0;
       editor.selectionEnd = 0;
+      updateStatus();
 
       editor.addEventListener("keydown", (event) => {
         if (event.key === "Tab") {
@@ -201,6 +226,7 @@
           currentFilename = file.name || "note.txt";
           fileHandle = null;
           tauriFilePath = null;
+          updateStatus();
 
           // Move caret to end
           editor.selectionStart = editor.value.length;
@@ -267,6 +293,7 @@
             tauriFilePath = path;
             currentFilename = filenameFromPath(path) || currentFilename;
             fileHandle = null;
+            updateStatus();
             return;
           } catch (_err) {
             // fall through to browser-style save
@@ -287,6 +314,7 @@
             fileHandle = handle;
             currentFilename = handle.name || currentFilename;
             await writeToHandle(handle);
+            updateStatus();
             return;
           } catch (err) {
             if (err && err.name === "AbortError") return;
@@ -300,6 +328,7 @@
         if (!trimmed) return;
         currentFilename = trimmed;
         fileHandle = null;
+        updateStatus();
         downloadFile(trimmed);
       }
 
@@ -343,6 +372,7 @@
         currentFilename = filenameFromPath(selected) || "note.txt";
         tauriFilePath = selected;
         fileHandle = null;
+        updateStatus();
         editor.selectionStart = editor.value.length;
         editor.selectionEnd = editor.value.length;
         editor.focus();
@@ -351,6 +381,7 @@
       async function initTauriCwd() {
         if (tauriCwd !== null || !tauriCore) return;
         tauriCwd = await tauriCore.invoke("current_directory").catch(() => null);
+        if (tauriCwd) updateStatus();
       }
 
       function joinPath(dir, name) {
@@ -518,6 +549,49 @@
         rootStyle.setProperty("--editor-highlight", highlight);
         rootStyle.setProperty("--editor-dark", dark);
         editor.style.caretColor = foreground;
+      }
+
+      function updateStatus() {
+        if (!statusFilename) return;
+        const nameForStatus = getDisplayPath();
+        statusFilename.textContent = shortenName(
+          nameForStatus || "Untitled",
+          STATUS_FRONT,
+          STATUS_BACK
+        );
+      }
+
+      function getDisplayPath() {
+        if (tauriFilePath) {
+          return relativeToCwd(tauriCwd, tauriFilePath);
+        }
+        if (fileHandle && fileHandle.name) {
+          return fileHandle.name;
+        }
+        return currentFilename || "";
+      }
+
+      function shortenName(name, front, back) {
+        if (!name) return "Untitled";
+        if (typeof name !== "string") return "Untitled";
+        const max = front + back + 3;
+        if (name.length <= max) return name;
+        const start = name.slice(0, front);
+        const end = name.slice(name.length - back);
+        return `${start}...${end}`;
+      }
+
+      function relativeToCwd(base, target) {
+        if (!base || !target) return target || "";
+        const normalize = (p) => p.replace(/\\/g, "/").replace(/\/+$/, "");
+        const nBase = normalize(base);
+        const nTarget = normalize(target);
+        if (nTarget.startsWith(nBase)) {
+          const trimmed = nTarget.slice(nBase.length);
+          const cleaned = trimmed.replace(/^[/\\]/, "");
+          return cleaned || target;
+        }
+        return target;
       }
     })();
   </script>

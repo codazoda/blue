@@ -37,3 +37,5 @@ Example `blue.json`:
 - Install JS deps: `npm install`
 - Run the desktop app in dev mode: `npm run tauri dev`
 - For a browser-only preview (no Tauri APIs): `npm run dev` and open the shown Vite URL.
+
+Joel was here.
