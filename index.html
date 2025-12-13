@@ -126,7 +126,7 @@
     <span id="status-filename"></span>
   </div>
   <textarea id="editor" spellcheck="false"></textarea>
-  <input id="fileInput" type="file" accept="text/*,.txt,.md,.log" />
+  <input id="fileInput" type="file" />
 
   <script type="module">
     (async function () {
@@ -442,12 +442,6 @@
         const defaultPath = await buildDefaultPath();
         const selected = await tauriDialog.open({
           multiple: false,
-          filters: [
-            {
-              name: "Text",
-              extensions: ["txt", "md", "log", "text", "*"],
-            },
-          ],
           defaultPath: defaultPath || undefined,
         });
         if (!selected || Array.isArray(selected)) {
