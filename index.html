@@ -211,6 +211,7 @@
       // Listen for native menu events (Tauri desktop). No-ops in browser preview.
       try {
         tauri?.event?.listen("menu-new", () => newFile());
+        tauri?.event?.listen("menu-close", () => newFile());
         tauri?.event?.listen("menu-open", () => openFileDialog());
         tauri?.event?.listen("menu-save", () => saveFile());
         tauri?.event?.listen("menu-save-as", () => saveFileAs());

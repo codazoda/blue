@@ -34,6 +34,9 @@ pub fn run() {
             "new" => {
                 let _ = app.emit("menu-new", ());
             }
+            "close" => {
+                let _ = app.emit("menu-close", ());
+            }
             "open" => {
                 let _ = app.emit("menu-open", ());
             }
@@ -69,6 +72,10 @@ fn build_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
         .id("new")
         .accelerator("CmdOrCtrl+N")
         .build(app)?;
+    let close_item = MenuItemBuilder::new("Close")
+        .id("close")
+        .accelerator("CmdOrCtrl+W")
+        .build(app)?;
     let open_item = MenuItemBuilder::new("Open...")
         .id("open")
         .accelerator("CmdOrCtrl+O")
@@ -89,6 +96,7 @@ fn build_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     #[allow(unused_mut)]
     let mut file_menu = SubmenuBuilder::new(app, "File")
         .item(&new_item)
+        .item(&close_item)
         .item(&open_item)
         .item(&save_item)
         .item(&save_as_item)
