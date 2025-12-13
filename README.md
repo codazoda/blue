@@ -4,15 +4,23 @@ Blue is a minimalist text editor inspired by the Turbo Pascal and Turbo Basic ed
 
 ## Configuration
 
-Blue reads configuration from a `blue.json` file in the app directory. At the moment the only option is:
+Blue reads configuration from a `blue.json` file in the app directory. Options:
 
 - `wordWrap` (boolean): `true` to wrap long lines (default), `false` to keep long lines on a single row with horizontal scrolling.
+- `background` (string): background color for the editor (default `#0000aa`, Turbo Pascal blue).
+- `foreground` (string): text/caret color (default `#ffff55`, Turbo Pascal yellow).
+- `highlight` (string): accent/highlight color (default `#ffffff`, the previous white foreground).
+- `dark` (string): gray accent color (default `#444444`).
 
 Example `blue.json`:
 
 ```json
 {
-  "wordWrap": true
+  "wordWrap": true,
+  "background": "#0000aa",
+  "foreground": "#ffff55",
+  "highlight": "#ffffff",
+  "dark": "#444444"
 }
 ```
 

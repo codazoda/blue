@@ -9,6 +9,10 @@
   <style>
     :root {
       color-scheme: dark;
+      --editor-bg: #0000aa;   /* Turbo Pascal-style blue */
+      --editor-fg: #ffff55;   /* Turbo Pascal bright yellow */
+      --editor-highlight: #ffffff; /* previous foreground (white) */
+      --editor-dark: #444444;      /* gray accent */
     }
 
     * {
@@ -23,7 +27,7 @@
 
     body {
       background: #0f0f0f; /* neutral so browser chrome stays dark, not blue */
-      color: #ffffff;      /* white text */
+      color: var(--editor-fg);
       font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
         "Courier New", monospace;
       overflow: hidden;
@@ -35,13 +39,13 @@
       padding: 1rem;
       border: none;
       margin: 0;
-      background: #0000aa; /* Turbo Pascal-style blue */
-      color: inherit;
+      background: var(--editor-bg);
+      color: var(--editor-fg);
       font: inherit;
       line-height: 1.3;
       resize: none;
       outline: none;
-      caret-color: #ffffff;
+      caret-color: var(--editor-fg);
       tab-size: 4;
       -moz-tab-size: 4;
       white-space: pre-wrap;
@@ -61,14 +65,20 @@
   </style>
 </head>
 <body>
-  <textarea id="editor" spellcheck="false"></textarea>
-  <input id="fileInput" type="file" accept="text/*,.txt,.md,.log" />
+      <textarea id="editor" spellcheck="false"></textarea>
+      <input id="fileInput" type="file" accept="text/*,.txt,.md,.log" />
 
-  <script type="module">
-    (async function () {
-      const editor = document.getElementById("editor");
-      const fileInput = document.getElementById("fileInput");
-      const defaultConfig = { wordWrap: true };
+      <script type="module">
+        (async function () {
+          const editor = document.getElementById("editor");
+          const fileInput = document.getElementById("fileInput");
+          const defaultConfig = {
+            wordWrap: true,
+            background: "#0000aa",
+            foreground: "#ffff55",
+            highlight: "#ffffff",
+            dark: "#444444",
+          };
 
       const INDENT = "\t";
       let currentFilename = "";
@@ -487,6 +497,27 @@
         editor.setAttribute("wrap", wrap ? "soft" : "off");
         editor.style.whiteSpace = wrap ? "pre-wrap" : "pre";
         editor.style.overflowX = wrap ? "hidden" : "auto";
+
+        const background =
+          typeof config.background === "string"
+            ? config.background
+            : defaultConfig.background;
+        const foreground =
+          typeof config.foreground === "string"
+            ? config.foreground
+            : defaultConfig.foreground;
+        const highlight =
+          typeof config.highlight === "string"
+            ? config.highlight
+            : defaultConfig.highlight;
+        const dark =
+          typeof config.dark === "string" ? config.dark : defaultConfig.dark;
+        const rootStyle = document.documentElement.style;
+        rootStyle.setProperty("--editor-bg", background);
+        rootStyle.setProperty("--editor-fg", foreground);
+        rootStyle.setProperty("--editor-highlight", highlight);
+        rootStyle.setProperty("--editor-dark", dark);
+        editor.style.caretColor = foreground;
       }
     })();
   </script>
