@@ -6,6 +6,15 @@ fn greet(name: &str) -> String {
 
 #[tauri::command]
 fn current_directory() -> Option<String> {
+    if let Some(set) = WORKING_DIR.get() {
+        return set.to_str().map(|s| s.to_string());
+    }
+    if let Some(pwd) = std::env::var_os("PWD") {
+        let pb = PathBuf::from(pwd);
+        if pb.is_dir() {
+            return pb.to_str().map(|s| s.to_string());
+        }
+    }
     std::env::current_dir().ok().and_then(|path| {
         // In dev the CWD is often src-tauri; prefer the project root if so.
         let adjusted = match path.file_name().and_then(|name| name.to_str()) {
@@ -20,11 +29,19 @@ use tauri::menu::{
     AboutMetadata, Menu, MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder,
 };
 use tauri::Emitter;
+use std::ffi::{OsStr, OsString};
+use std::path::PathBuf;
+use std::sync::OnceLock;
+
+static WORKING_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    apply_working_directory_override();
+
     tauri::Builder::default()
         .setup(|app| {
+            apply_working_directory_override();
             let handle = app.handle();
             let menu = build_menu(&handle)?;
             app.set_menu(menu)?;
@@ -180,4 +197,82 @@ fn build_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     }
 
     menu.build()
+}
+
+// If the user launches with an explicit path (e.g., `blue /path/to/dir` or
+// `open -a "Blue" --args /path/to/dir`), respect that by setting the process
+// working directory before the app starts.
+fn apply_working_directory_override() {
+    // 1) Explicit env override
+    if let Some(env_path) = std::env::var_os("BLUE_CWD") {
+        if set_and_record_cwd(&env_path) {
+            return;
+        }
+    }
+
+    // 2) First usable CLI arg (skip executable; ignore macOS -psn_*)
+    if let Some(arg_path) = std::env::args_os().skip(1).find_map(normalize_arg_path) {
+        if set_and_record_cwd(arg_path.as_os_str()) {
+            return;
+        }
+    }
+
+    // 3) PWD if provided
+    if let Some(pwd_path) = std::env::var_os("PWD") {
+        if set_and_record_cwd(&pwd_path) {
+            return;
+        }
+    }
+
+    // 4) Fallback to current dir
+    if WORKING_DIR.get().is_none() {
+        if let Ok(cwd) = std::env::current_dir() {
+            let _ = WORKING_DIR.set(cwd);
+        }
+    }
+}
+
+fn set_and_record_cwd(path: &OsStr) -> bool {
+    if let Some(dir) = resolve_dir(path) {
+        let _ = std::env::set_current_dir(&dir);
+        let _ = WORKING_DIR.set(dir);
+        return true;
+    }
+    false
+}
+
+fn normalize_arg_path(arg: OsString) -> Option<OsString> {
+    // Skip macOS process serial number args like -psn_0_12345
+    if let Some(s) = arg.to_str() {
+        if s.starts_with("-psn_") {
+            return None;
+        }
+        if let Some(stripped) = s.strip_prefix("file://") {
+            return Some(OsString::from(stripped));
+        }
+    }
+    Some(arg)
+}
+
+fn resolve_dir(path: &OsStr) -> Option<PathBuf> {
+    let pb = PathBuf::from(path);
+    if pb.is_absolute() {
+        return pb.is_dir().then_some(pb);
+    }
+    // Prefer PWD as the base for relative paths (useful for `open -a ... ./`)
+    if let Some(pwd) = std::env::var_os("PWD") {
+        let base = PathBuf::from(pwd);
+        let joined = base.join(&pb);
+        if joined.is_dir() {
+            return Some(joined);
+        }
+    }
+    // Fallback to current process dir
+    if let Ok(cwd) = std::env::current_dir() {
+        let joined = cwd.join(&pb);
+        if joined.is_dir() {
+            return Some(joined);
+        }
+    }
+    None
 }

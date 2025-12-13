@@ -486,7 +486,8 @@
 
       async function openViaTauriDialog() {
         if (!(tauriDialog && tauriFs && tauriCore)) throw new Error("no tauri dialog");
-        const defaultPath = await buildDefaultPath();
+        await initTauriCwd();
+        const defaultPath = tauriCwd || undefined;
         const selected = await tauriDialog.open({
           multiple: false,
           defaultPath: defaultPath || undefined,
