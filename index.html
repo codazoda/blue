@@ -118,6 +118,42 @@
     #fileInput {
       display: none;
     }
+
+    #status-bottom {
+      position: relative;
+      height: var(--status-height);
+      background: var(--editor-bg);
+      color: var(--editor-dark);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 0.75rem;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #status-bottom::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: var(--status-line);
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    #status-pos {
+      display: inline-block;
+      padding: 0 0.75rem;
+      background: var(--editor-bg);
+      position: relative;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
@@ -127,6 +163,9 @@
   </div>
   <textarea id="editor" spellcheck="false"></textarea>
   <input id="fileInput" type="file" />
+  <div id="status-bottom" aria-live="polite">
+    <span id="status-pos">1:1</span>
+  </div>
 
   <script type="module">
     (async function () {
@@ -135,6 +174,7 @@
       const statusFilename = document.getElementById("status-filename");
       const statusDirty = document.getElementById("status-dirty");
       const statusDirtyBox = document.getElementById("status-dirty-box");
+      const statusPos = document.getElementById("status-pos");
       const defaultConfig = {
         wordWrap: true,
         background: "#0000aa",
@@ -195,6 +235,10 @@
 
       editor.addEventListener("input", () => {
         updateDirtyStateFromContent();
+        updateCursorPosition();
+      });
+      ["click", "keyup", "mouseup", "focus"].forEach((evt) => {
+        editor.addEventListener(evt, updateCursorPosition);
       });
 
       // --- Keyboard shortcuts for Load / Save (Turbo Pascal-style) ---
@@ -290,6 +334,7 @@
           editor.selectionStart = 0;
           editor.selectionEnd = 0;
           editor.focus();
+          updateCursorPosition();
         };
         reader.readAsText(file);
 
@@ -308,6 +353,7 @@
         editor.selectionStart = 0;
         editor.selectionEnd = 0;
         editor.focus();
+        updateCursorPosition();
       }
 
       // --- Save (download/write) logic ---
@@ -458,6 +504,7 @@
         editor.selectionStart = 0;
         editor.selectionEnd = 0;
         editor.focus();
+        updateCursorPosition();
       }
 
       async function initTauriCwd() {
@@ -592,6 +639,7 @@
         if (atEnd) {
           editor.scrollTop = editor.scrollHeight;
         }
+        updateCursorPosition();
       }
 
       function triggerInputSync() {
@@ -652,6 +700,17 @@
           STATUS_FRONT,
           STATUS_BACK
         );
+        updateCursorPosition();
+      }
+
+      function updateCursorPosition() {
+        if (!statusPos || !editor) return;
+        const pos = editor.selectionStart || 0;
+        const textUpToPos = editor.value.slice(0, pos);
+        const line = textUpToPos.split("\n").length;
+        const lastBreak = textUpToPos.lastIndexOf("\n");
+        const col = pos - (lastBreak === -1 ? -1 : lastBreak);
+        statusPos.textContent = `${line}:${col}`;
       }
 
       function updateDirtyStateFromContent() {
