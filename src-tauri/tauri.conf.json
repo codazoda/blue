@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "blue",
+  "productName": "Blue",
   "version": "0.1.0",
   "identifier": "com.joelryan.blue",
   "build": {
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "blue",
+        "title": "Blue",
         "width": 800,
         "height": 600
       }
