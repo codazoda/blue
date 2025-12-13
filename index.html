@@ -161,7 +161,7 @@
     <span id="status-dirty" aria-label="File edit state">[<span id="status-dirty-box"> </span>]</span>
     <span id="status-filename"></span>
   </div>
-  <textarea id="editor" spellcheck="false"></textarea>
+  <textarea id="editor" spellcheck="false" autofocus></textarea>
   <input id="fileInput" type="file" />
   <div id="status-bottom" aria-live="polite">
     <span id="status-pos">1:1</span>
@@ -535,6 +535,7 @@
       // Focus editor on load
       window.addEventListener("load", () => {
         editor.focus();
+        updateCursorPosition();
       });
 
       function handleTabKey(event) {
