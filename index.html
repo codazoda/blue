@@ -44,7 +44,7 @@
       caret-color: #ffffff;
       tab-size: 4;
       -moz-tab-size: 4;
-      white-space: pre;
+      white-space: pre-wrap;
     }
 
     /* Mobile: make sure the viewport is usable */
@@ -64,37 +64,46 @@
   <textarea id="editor" spellcheck="false"></textarea>
   <input id="fileInput" type="file" accept="text/*,.txt,.md,.log" />
 
-  <script>
-    (function () {
+  <script type="module">
+    (async function () {
       const editor = document.getElementById("editor");
       const fileInput = document.getElementById("fileInput");
+      const defaultConfig = { wordWrap: true };
 
-      const STORAGE_KEY = "ponder-turbo-note";
       const INDENT = "\t";
-      let currentFilename = "note.txt";
-
-      // --- Restore last note from localStorage (optional, like Ponder) ---
+      let currentFilename = "";
+      let fileHandle = null;
+      let tauriFilePath = null;
+      let tauriCwd = null;
+      const tauri = window.__TAURI__;
+      const tauriCore = tauri?.core;
+      let tauriDialog = null;
+      let tauriFs = null;
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved !== null) {
-          editor.value = saved;
-        }
-      } catch (e) {
-        // localStorage might be unavailable; fail quietly
+        tauriDialog = await import("@tauri-apps/plugin-dialog");
+        tauriFs = await import("@tauri-apps/plugin-fs");
+      } catch (_err) {
+        tauriDialog = null;
+        tauriFs = null;
       }
 
-      // Always start with caret at the end (feels more like a scratchpad)
-      editor.selectionStart = editor.value.length;
-      editor.selectionEnd = editor.value.length;
+      applyConfig(defaultConfig);
+      loadConfig().then(applyConfig);
+      initTauriCwd();
 
-      // --- Auto-save to localStorage ---
-      editor.addEventListener("input", () => {
-        try {
-          localStorage.setItem(STORAGE_KEY, editor.value);
-        } catch (e) {
-          // ignore quota or privacy mode errors
-        }
-      });
+      // Listen for native menu events (Tauri desktop). No-ops in browser preview.
+      try {
+        tauri?.event?.listen("menu-open", () => openFileDialog());
+        tauri?.event?.listen("menu-save", () => saveFile());
+        tauri?.event?.listen("menu-save-as", () => saveFileAs());
+      } catch (_err) {
+        // ignore if Tauri globals aren't available
+      }
+
+      // Start blank and place the caret at the beginning
+      editor.value = "";
+      editor.selectionStart = 0;
+      editor.selectionEnd = 0;
 
       editor.addEventListener("keydown", (event) => {
         if (event.key === "Tab") {
@@ -115,7 +124,11 @@
 
         if (modKey && key === "s") {
           event.preventDefault();
-          saveFile();
+          if (event.shiftKey) {
+            saveFileAs();
+          } else {
+            saveFile();
+          }
           resetChord();
           return;
         }
@@ -163,7 +176,9 @@
 
       // --- Load (upload) logic ---
       function openFileDialog() {
-        fileInput.click();
+        openViaTauriDialog().catch(() => {
+          fileInput.click();
+        });
       }
 
       fileInput.addEventListener("change", (event) => {
@@ -174,13 +189,8 @@
         reader.onload = function (e) {
           editor.value = e.target.result || "";
           currentFilename = file.name || "note.txt";
-
-          // Persist in localStorage
-          try {
-            localStorage.setItem(STORAGE_KEY, editor.value);
-          } catch (err) {
-            // ignore
-          }
+          fileHandle = null;
+          tauriFilePath = null;
 
           // Move caret to end
           editor.selectionStart = editor.value.length;
@@ -193,15 +203,159 @@
         fileInput.value = "";
       });
 
-      // --- Save (download) logic ---
-      function saveFile() {
-        const text = editor.value;
-        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      // --- Save (download/write) logic ---
+      async function saveFile() {
+        // If we have a Tauri path, attempt to write directly
+        if (tauriFs && tauriFilePath) {
+          try {
+            await tauriFs.writeTextFile(tauriFilePath, editor.value);
+            return;
+          } catch (_err) {
+            // If writing failed, perhaps due to permissions or file deletion,
+            // fall back to Save As to prompt user for new location.
+            console.error("Failed to write to existing file, falling back to Save As:", _err);
+            return saveFileAs();
+          }
+        }
+
+        // Fallback for browser environments or other errors
+        if (fileHandle && fileHandle.createWritable) {
+          try {
+            await writeToHandle(fileHandle);
+            return;
+          } catch (_err) {
+            // fall back to download if write fails
+          }
+        }
+
+        // If we're on desktop but don't yet have a path, ask for one
+        if (tauriFs) {
+          return saveFileAs();
+        }
+
+        downloadFile(currentFilename || "note.txt");
+      }
+
+      function filenameFromPath(path) {
+        return path.split(/[\\/]/).pop();
+      }
+
+      async function saveFileAs() {
+        if (tauriDialog && tauriFs) {
+          try {
+            await initTauriCwd();
+            const path = await tauriDialog.save({
+              defaultPath: joinPath(
+                tauriCwd,
+                currentFilename || "note.txt"
+              ),
+            });
+            if (!path) {
+              return;
+            }
+            await tauriFs.writeTextFile(path, editor.value);
+            tauriFilePath = path;
+            currentFilename = filenameFromPath(path) || currentFilename;
+            fileHandle = null;
+            return;
+          } catch (_err) {
+            // fall through to browser-style save
+          }
+        }
+
+        if (window.showSaveFilePicker) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: currentFilename || "note.txt",
+              types: [
+                {
+                  description: "Text",
+                  accept: { "text/plain": [".txt", ".md", ".log", ".text"] },
+                },
+              ],
+            });
+            fileHandle = handle;
+            currentFilename = handle.name || currentFilename;
+            await writeToHandle(handle);
+            return;
+          } catch (err) {
+            if (err && err.name === "AbortError") return;
+            // fall through to browser-style save
+          }
+        }
+
+        const nextName = prompt("Save as", currentFilename || "note.txt");
+        if (nextName === null) return;
+        const trimmed = nextName.trim();
+        if (!trimmed) return;
+        currentFilename = trimmed;
+        fileHandle = null;
+        downloadFile(trimmed);
+      }
+
+      async function writeToHandle(handle) {
+        const writable = await handle.createWritable();
+        await writable.write(editor.value);
+        await writable.close();
+      }
+
+      async function buildDefaultPath(nameOnly) {
+        if (tauriFilePath) return tauriFilePath;
+        let cwd = tauriCwd;
+        if (!cwd) {
+          cwd = await tauriCore?.invoke("current_directory").catch(() => null);
+          if (cwd) tauriCwd = cwd;
+        }
+        if (cwd) {
+          return joinPath(cwd, nameOnly || currentFilename || "note.txt");
+        }
+        return nameOnly || currentFilename || "note.txt";
+      }
+
+      async function openViaTauriDialog() {
+        if (!(tauriDialog && tauriFs && tauriCore)) throw new Error("no tauri dialog");
+        const defaultPath = await buildDefaultPath();
+        const selected = await tauriDialog.open({
+          multiple: false,
+          filters: [
+            {
+              name: "Text",
+              extensions: ["txt", "md", "log", "text", "*"],
+            },
+          ],
+          defaultPath: defaultPath || undefined,
+        });
+        if (!selected || Array.isArray(selected)) {
+          return;
+        }
+        const contents = await tauriFs.readTextFile(selected);
+        editor.value = contents;
+        currentFilename = filenameFromPath(selected) || "note.txt";
+        tauriFilePath = selected;
+        fileHandle = null;
+        editor.selectionStart = editor.value.length;
+        editor.selectionEnd = editor.value.length;
+        editor.focus();
+      }
+
+      async function initTauriCwd() {
+        if (tauriCwd !== null || !tauriCore) return;
+        tauriCwd = await tauriCore.invoke("current_directory").catch(() => null);
+      }
+
+      function joinPath(dir, name) {
+        if (!name) return dir;
+        const sep = dir.endsWith("/") || dir.endsWith("\\") ? "" : "/";
+        return `${dir}${sep}${name}`;
+      }
+
+      function downloadFile(name) {
+        const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
 
         const a = document.createElement("a");
         a.href = url;
-        a.download = currentFilename || "note.txt";
+        a.download = name || "note.txt";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -274,7 +428,7 @@
         let removedTotal = 0;
         let removedStart = 0;
         const outdented = lines.map((line, idx) => {
-          const leading = line.match(/^[\t ]*/)[0];
+          const leading = line.match(/^[ \t]*/)[0];
           const removeCount = leading.startsWith("\t")
             ? 1
             : Math.min(4, leading.length);
@@ -315,6 +469,24 @@
 
       function triggerInputSync() {
         editor.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      async function loadConfig() {
+        try {
+          const res = await fetch("blue.json", { cache: "no-store" });
+          if (!res.ok) return defaultConfig;
+          const data = await res.json();
+          return { ...defaultConfig, ...data };
+        } catch (_err) {
+          return defaultConfig;
+        }
+      }
+
+      function applyConfig(config) {
+        const wrap = config.wordWrap !== false;
+        editor.setAttribute("wrap", wrap ? "soft" : "off");
+        editor.style.whiteSpace = wrap ? "pre-wrap" : "pre";
+        editor.style.overflowX = wrap ? "hidden" : "auto";
       }
     })();
   </script>

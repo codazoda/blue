@@ -1,7 +1,31 @@
-# Tauri + Vanilla TS
+# Blue
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
+Blue is a minimalist text editor inspired by the Turbo Pascal and Turbo Basic editors of the late 90's.
 
-## Recommended IDE Setup
+## Configuration
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+Blue reads configuration from a `blue.json` file in the app directory. At the moment the only option is:
+
+- `wordWrap` (boolean): `true` to wrap long lines (default), `false` to keep long lines on a single row with horizontal scrolling.
+
+Example `blue.json`:
+
+```json
+{
+  "wordWrap": true
+}
+```
+
+## Shortcuts
+
+- File → Save: `Cmd/Ctrl+S`
+- File → Save As: `Cmd/Ctrl+Shift+S`
+- File → Open: `Cmd/Ctrl+O`
+- In the desktop build, these appear in the native File menu. Save As uses the OS file picker via the File System Access API when available; otherwise it falls back to a download prompt.
+
+## Development
+
+- Install prerequisites for Tauri 2 (Rust toolchain, npm, platform-specific deps).
+- Install JS deps: `npm install`
+- Run the desktop app in dev mode: `npm run tauri dev`
+- For a browser-only preview (no Tauri APIs): `npm run dev` and open the shown Vite URL.
