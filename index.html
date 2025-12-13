@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Ponder Turbo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f0f0f" />
+
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    body {
+      background: #0f0f0f; /* neutral so browser chrome stays dark, not blue */
+      color: #ffffff;      /* white text */
+      font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+      overflow: hidden;
+    }
+
+    #editor {
+      width: 100vw;
+      height: 100vh;
+      padding: 1rem;
+      border: none;
+      margin: 0;
+      background: #0000aa; /* Turbo Pascal-style blue */
+      color: inherit;
+      font: inherit;
+      line-height: 1.3;
+      resize: none;
+      outline: none;
+      caret-color: #ffffff;
+      tab-size: 4;
+      -moz-tab-size: 4;
+      white-space: pre;
+    }
+
+    /* Mobile: make sure the viewport is usable */
+    @media (max-width: 600px) {
+      #editor {
+        padding: 0.75rem;
+      }
+    }
+
+    /* Hide the file input; it's only triggered from the keyboard shortcut */
+    #fileInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <textarea id="editor" spellcheck="false"></textarea>
+  <input id="fileInput" type="file" accept="text/*,.txt,.md,.log" />
+
+  <script>
+    (function () {
+      const editor = document.getElementById("editor");
+      const fileInput = document.getElementById("fileInput");
+
+      const STORAGE_KEY = "ponder-turbo-note";
+      const INDENT = "\t";
+      let currentFilename = "note.txt";
+
+      // --- Restore last note from localStorage (optional, like Ponder) ---
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved !== null) {
+          editor.value = saved;
+        }
+      } catch (e) {
+        // localStorage might be unavailable; fail quietly
+      }
+
+      // Always start with caret at the end (feels more like a scratchpad)
+      editor.selectionStart = editor.value.length;
+      editor.selectionEnd = editor.value.length;
+
+      // --- Auto-save to localStorage ---
+      editor.addEventListener("input", () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, editor.value);
+        } catch (e) {
+          // ignore quota or privacy mode errors
+        }
+      });
+
+      editor.addEventListener("keydown", (event) => {
+        if (event.key === "Tab") {
+          handleTabKey(event);
+        } else if (event.key === "Enter") {
+          handleEnterKey(event);
+        }
+      });
+
+      // --- Keyboard shortcuts for Load / Save (Turbo Pascal-style) ---
+      let awaitingChord = false;
+      let chordTimer = null;
+
+      window.addEventListener("keydown", (event) => {
+        // Accept either Command or Control on macOS; Control on other platforms
+        const modKey = event.ctrlKey || event.metaKey;
+        const key = event.key.toLowerCase();
+
+        if (modKey && key === "s") {
+          event.preventDefault();
+          saveFile();
+          resetChord();
+          return;
+        }
+
+        if (modKey && key === "o") {
+          event.preventDefault();
+          openFileDialog();
+          resetChord();
+          return;
+        }
+
+        // Second stroke after Ctrl/Cmd+K
+        if (awaitingChord) {
+          if (key === "s") {
+            event.preventDefault();
+            resetChord();
+            saveFile();
+            return;
+          }
+          if (key === "o") {
+            event.preventDefault();
+            resetChord();
+            openFileDialog();
+            return;
+          }
+          resetChord();
+          return;
+        }
+
+        // Start chord: Ctrl/Cmd+K then wait up to 3s for S or O
+        if (modKey && key === "k") {
+          event.preventDefault();
+          awaitingChord = true;
+          chordTimer = setTimeout(resetChord, 3000);
+        }
+      });
+
+      function resetChord() {
+        awaitingChord = false;
+        if (chordTimer) {
+          clearTimeout(chordTimer);
+          chordTimer = null;
+        }
+      }
+
+      // --- Load (upload) logic ---
+      function openFileDialog() {
+        fileInput.click();
+      }
+
+      fileInput.addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          editor.value = e.target.result || "";
+          currentFilename = file.name || "note.txt";
+
+          // Persist in localStorage
+          try {
+            localStorage.setItem(STORAGE_KEY, editor.value);
+          } catch (err) {
+            // ignore
+          }
+
+          // Move caret to end
+          editor.selectionStart = editor.value.length;
+          editor.selectionEnd = editor.value.length;
+          editor.focus();
+        };
+        reader.readAsText(file);
+
+        // Reset the input so selecting the same file again still fires change
+        fileInput.value = "";
+      });
+
+      // --- Save (download) logic ---
+      function saveFile() {
+        const text = editor.value;
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = currentFilename || "note.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // Focus editor on load
+      window.addEventListener("load", () => {
+        editor.focus();
+      });
+
+      function handleTabKey(event) {
+        event.preventDefault();
+
+        const { selectionStart, selectionEnd, value } = editor;
+
+        if (selectionStart === selectionEnd) {
+          if (event.shiftKey) {
+            outdentCaret(selectionStart, value);
+          } else {
+            insertIndent(selectionStart, value);
+          }
+          return;
+        }
+
+        adjustBlockIndent(event.shiftKey, selectionStart, selectionEnd, value);
+      }
+
+      function insertIndent(pos, value) {
+        const newValue = value.slice(0, pos) + INDENT + value.slice(pos);
+        const newPos = pos + INDENT.length;
+        editor.value = newValue;
+        editor.setSelectionRange(newPos, newPos);
+        triggerInputSync();
+      }
+
+      function outdentCaret(pos, value) {
+        const lookStart = Math.max(0, pos - INDENT.length);
+        const chunk = value.slice(lookStart, pos);
+        const matchTab = chunk === "\t";
+        const matchSpaces = chunk.match(/ {1,4}$/);
+        const removeCount = matchTab ? 1 : matchSpaces ? matchSpaces[0].length : 0;
+        if (!removeCount) return;
+
+        const newValue =
+          value.slice(0, pos - removeCount) + value.slice(pos);
+        const newPos = pos - removeCount;
+        editor.value = newValue;
+        editor.setSelectionRange(newPos, newPos);
+        triggerInputSync();
+      }
+
+      function adjustBlockIndent(isOutdent, start, end, value) {
+        const startLine = value.lastIndexOf("\n", start - 1) + 1;
+        const endLineBreak = value.indexOf("\n", end);
+        const endLine = endLineBreak === -1 ? value.length : endLineBreak;
+        const lines = value.slice(startLine, endLine).split("\n");
+
+        if (!isOutdent) {
+          const indented = lines.map((line) => INDENT + line);
+          const newValue =
+            value.slice(0, startLine) + indented.join("\n") + value.slice(endLine);
+          const deltaTotal = INDENT.length * lines.length;
+          editor.value = newValue;
+          editor.setSelectionRange(start + INDENT.length, end + deltaTotal);
+          triggerInputSync();
+          return;
+        }
+
+        let removedTotal = 0;
+        let removedStart = 0;
+        const outdented = lines.map((line, idx) => {
+          const leading = line.match(/^[\t ]*/)[0];
+          const removeCount = leading.startsWith("\t")
+            ? 1
+            : Math.min(4, leading.length);
+          if (idx === 0) removedStart = removeCount;
+          removedTotal += removeCount;
+          return line.slice(removeCount);
+        });
+
+        const newValue =
+          value.slice(0, startLine) + outdented.join("\n") + value.slice(endLine);
+        const newStart = Math.max(start - removedStart, startLine);
+        const newEnd = Math.max(newStart, end - removedTotal);
+        editor.value = newValue;
+        editor.setSelectionRange(newStart, newEnd);
+        triggerInputSync();
+      }
+
+      function handleEnterKey(event) {
+        event.preventDefault();
+        const { selectionStart, selectionEnd, value } = editor;
+
+        const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+        const currentLine = value.slice(lineStart, selectionStart);
+        const indentMatch = currentLine.match(/^\t*/);
+        const currentIndent = indentMatch ? indentMatch[0] : "";
+
+        const insertion = "\n" + currentIndent;
+        const newValue =
+          value.slice(0, selectionStart) +
+          insertion +
+          value.slice(selectionEnd);
+        const newPos = selectionStart + insertion.length;
+
+        editor.value = newValue;
+        editor.setSelectionRange(newPos, newPos);
+        triggerInputSync();
+      }
+
+      function triggerInputSync() {
+        editor.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    })();
+  </script>
+</body>
+</html>
