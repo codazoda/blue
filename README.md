@@ -3,47 +3,49 @@
 Blue is a minimalist text editor inspired by the Turbo Pascal and Turbo Basic editors of the late 1990's.
 
 
+## Running Locally
+
+Blue has no build step. Serve the project directory with any static file server, for example:
+
+```
+npx serve
+# or
+python3 -m http.server 3000
+```
+
+Then open `http://localhost:3000/`. Opening `index.html` directly via `file://` will not work because the JS modules require an `http://` or `https://` origin.
+
+
 ## Configuration
 
-Blue reads configuration from a `blue.json` file in the app directory. The options are:
+Blue has two user-configurable files:
 
-- `wordWrap` (boolean): `true` to wrap long lines (default), `false` to keep long lines on a single row with horizontal scrolling.
-- `background` (string): background color for the editor (default `#0000aa`, Turbo Pascal blue).
-- `foreground` (string): text/caret color (default `#ffff55`, Turbo Pascal yellow).
-- `highlight` (string): accent/highlight color (default `#ffffff`, the white foreground).
-- 'bright' (string): bright color (default '', a bright green indicator).
-- `dark` (string): gray accent color (default `#888888`).
+**`blue.css`** — color theme. Edit these CSS custom properties:
 
-Example `blue.json`:
+- `--editor-bg` — editor background (default `#0000aa`, Turbo Pascal blue)
+- `--editor-fg` — editor text and caret (default `#ffff55`, Turbo Pascal yellow)
+- `--editor-highlight` — status bar text and rules (default `#ffffff`)
+- `--editor-dark` — position indicator and dim accents (default `#888888`)
 
-```json
-{
-  "wordWrap": true,
-  "background": "#0000aa",
-  "foreground": "#ffff55",
-  "highlight": "#ffffff",
-  "bright": "#00ff00",
-  "dark": "#888888"
-}
-```
+**`blue.json`** — behavior options:
+
+- `wordWrap` (boolean): `true` to wrap long lines (default), `false` for horizontal scrolling.
+
+All other styling lives in `css/main.css`.
 
 
 ## Visual Design
 
-- There are several standard colors: forground (#ffff55), background (#0000aa), highlight (#ffffff), bright (#00ff00), and dark (#888888).
+- There are several standard colors: foreground (#ffff55), background (#0000aa), highlight (#ffffff), bright (#00ff00), and dark (#888888).
 - The editor fills the whole browser view space.
-- There is a horizontal Divider Line across the top and bottom of the editor in the highlight color.
-- Status Indicator, Title, and Position Indicator are all overlayed on top of the Status Line, centered vertically.
-- Centered veritcally on the top line, 2em from the left, is the Status Indicator, which is "[ ]" by default.
-- The Status Indicator ("[ ]") changes to "[*]" when the current file has been edited.
-- The brackets in the status indicator are dark but the "*" is bright.
-- The title of the file is centered vertically and horizontally on the top-line and defaults to "untitled".
-- The Position Indicator is centered vertically on the bottom line and is 2em from the left.
-- The Position Indicator is formatted as "3:10" (row:column).
-- The background is blue ("background" in the css and #0000aa).
-- The foreground is yellow ("foreground" in the css and #ffff55).
-- The top and bottom lines are white ("highlight" in the css and #ffffff).
-- The Position Indicator is gray ("dark" in the css and #888888).
+- Two horizontal rules in the highlight color span edge-to-edge: a Top Rule and a Bottom Rule.
+- The Status Indicator, Title, and Position Indicator sit *inline* with the rules at the same vertical center — the rule visually breaks on either side of each label, leaving a small gap so the label appears to interrupt the line (e.g. `──── Untitled ────`).
+- Status Indicator: on the Top Rule, 2em from the left. Defaults to `[ ]`; becomes `[*]` when the file is dirty. Brackets render in `dark`; the `*` renders in `bright`.
+- Title: centered horizontally on the Top Rule. Defaults to `Untitled`. Renders in `highlight`.
+- Position Indicator: on the Bottom Rule, 2em from the left, formatted `row:column` (e.g. `3:19`). Renders in `dark`.
+- The background is blue (`background` in the css and #0000aa).
+- The foreground is yellow (`foreground` in the css and #ffff55).
+- The top and bottom rules are white (`highlight` in the css and #ffffff).
 - The tab key should indent a line and subsequent lines should be indented to the same level.
 
 

@@ -1,0 +1,9 @@
+/* blue.css — User-configurable color theme.
+   Edit these values to change Blue's appearance. */
+
+:root {
+  --editor-bg: #0000aa;        /* Editor background (Turbo Pascal blue) */
+  --editor-fg: #ffff55;        /* Editor text and caret (Turbo Pascal yellow) */
+  --editor-highlight: #ffffff; /* Status bar text and rules */
+  --editor-dark: #888888;      /* Position indicator and dim accents */
+}

@@ -1,0 +1,209 @@
+:root {
+  color-scheme: dark;
+  --status-height: 2.25rem;
+  --status-line: var(--editor-highlight);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: #0f0f0f; /* neutral so browser chrome stays dark, not blue */
+  color: var(--editor-fg);
+  font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#status {
+  position: relative;
+  height: var(--status-height);
+  background: var(--editor-bg);
+  color: var(--editor-highlight);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#status::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--status-line);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+#status-filename {
+  display: inline-block;
+  padding: 0 1rem;
+  background: var(--editor-bg);
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+#status-dirty {
+  position: absolute;
+  left: 1.25rem;
+  color: var(--editor-dark);
+  opacity: 0.9;
+  font-size: 0.9rem;
+  background: var(--editor-bg);
+  z-index: 1;
+}
+
+#status-dirty-box {
+  color: #00ff00;
+}
+
+#editor {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0; /* allow scrolling within flex parent */
+  padding: 1rem;
+  border: none;
+  margin: 0;
+  background: var(--editor-bg);
+  color: var(--editor-fg);
+  font: inherit;
+  line-height: 1.3;
+  resize: none;
+  outline: none;
+  caret-color: var(--editor-fg);
+  tab-size: 4;
+  -moz-tab-size: 4;
+  white-space: pre-wrap;
+}
+
+/* Mobile: make sure the viewport is usable */
+@media (max-width: 600px) {
+  #editor {
+    padding: 0.75rem;
+  }
+}
+
+/* PWA with window-controls-overlay: keep the top status bar clear of the
+   OS window controls (traffic lights on macOS, min/close on Windows). */
+@media (display-mode: window-controls-overlay) {
+  #status {
+    padding-left: calc(env(titlebar-area-x, 0) + 0.75rem);
+    padding-right: calc(100vw - env(titlebar-area-width, 100vw) - env(titlebar-area-x, 0) + 0.75rem);
+  }
+}
+
+/* Hide the file input; it's only triggered from the keyboard shortcut */
+#fileInput {
+  display: none;
+}
+
+#status-bottom {
+  position: relative;
+  height: var(--status-height);
+  background: var(--editor-bg);
+  color: var(--editor-dark);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 0.75rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#status-bottom::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--status-line);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+#status-pos {
+  display: inline-block;
+  padding: 0 0.75rem;
+  background: var(--editor-bg);
+  position: relative;
+  z-index: 1;
+}
+
+#help {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 10;
+}
+
+#help[data-open="true"] {
+  display: flex;
+}
+
+#help-panel {
+  background: var(--editor-bg);
+  color: var(--editor-fg);
+  border: 1px solid var(--editor-highlight);
+  padding: 1rem 1.25rem;
+  min-width: min(32rem, 90vw);
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow: auto;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+#help-panel h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  color: var(--editor-highlight);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#help-panel table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#help-panel td {
+  padding: 0.15rem 0.5rem 0.15rem 0;
+  vertical-align: top;
+}
+
+#help-panel td.key {
+  color: var(--editor-highlight);
+  white-space: nowrap;
+  width: 12rem;
+}
+
+#help-panel .hint {
+  margin-top: 0.75rem;
+  color: var(--editor-dark);
+  font-size: 0.85rem;
+}
