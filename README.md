@@ -2,6 +2,10 @@
 
 Blue is a minimalist text editor inspired by the Turbo Pascal and Turbo Basic editors of the late 1990's.
 
+Try it: <https://codazoda.github.io/blue/>
+
+![Screenshot of Blue](blue.png)
+
 
 ## Running Locally
 
