@@ -38,21 +38,6 @@ Blue has two user-configurable files:
 All other styling lives in `css/main.css`.
 
 
-## Visual Design
-
-- There are several standard colors: foreground (#ffff55), background (#0000aa), highlight (#ffffff), bright (#00ff00), and dark (#888888).
-- The editor fills the whole browser view space.
-- Two horizontal rules in the highlight color span edge-to-edge: a Top Rule and a Bottom Rule.
-- The Status Indicator, Title, and Position Indicator sit *inline* with the rules at the same vertical center — the rule visually breaks on either side of each label, leaving a small gap so the label appears to interrupt the line (e.g. `──── Untitled ────`).
-- Status Indicator: on the Top Rule, 2em from the left. Defaults to `[ ]`; becomes `[*]` when the file is dirty. Brackets render in `dark`; the `*` renders in `bright`.
-- Title: centered horizontally on the Top Rule. Defaults to `Untitled`. Renders in `highlight`.
-- Position Indicator: on the Bottom Rule, 2em from the left, formatted `row:column` (e.g. `3:19`). Renders in `dark`.
-- The background is blue (`background` in the css and #0000aa).
-- The foreground is yellow (`foreground` in the css and #ffff55).
-- The top and bottom rules are white (`highlight` in the css and #ffffff).
-- The tab key should indent a line and subsequent lines should be indented to the same level.
-
-
 ## Keyboard Shortcuts
 
 - F1 → Toggle the help
@@ -67,29 +52,6 @@ All other styling lives in `css/main.css`.
 - Enter → Auto-indent new line
 
 - Save As uses the OS file picker via the File System Access API when available; otherwise it falls back to a download prompt.
-
-
-## Help Menu
-
-The help menu is a modal. It shows each of the keyboard shortcuts. Clicking on any shortcut runs that shortcuts action. This allows mobile users to open a menu by clicking on the edit indicator and then perform any action with a click instead of a keystroke. Designed mainly for systems without keyboards, like smart phones.
-
-When the help modal is opened the background is darkened.
-
-The modal has a title of "HELP" then lists each of the keyboard shortcuts offered by the program.
-
-At the bottom it says "Press F1 or Esc to close". Clicking or tapping outside of the modal also closes.
-
-
-## Mouse / Finger Navigation
-
-Blue opens the help modal when you click on the Status Indicator ([*]).
-
-Clicking any of the keyboard shortcuts will close the modal and run that action.
-
-
-## PWA
-
-Blue has a manifest so that it can run as a PWA.
 
 
 ## Built to Last
@@ -108,3 +70,41 @@ Write unit tests using a dependency-free browser test harness. Requirements:
 - Support async test functions and catch thrown errors per-test (one failure shouldn't stop the run).
 - Tests live in tests/*.test.js and may touch document/window directly.
 - Keep the harness under 40 lines.
+
+
+## Visual Design
+
+- There are several standard colors: foreground (#ffff55), background (#0000aa), highlight (#ffffff), bright (#00ff00), and dark (#888888).
+- The editor fills the whole browser view space.
+- Two horizontal rules in the highlight color span edge-to-edge: a Top Rule and a Bottom Rule.
+- The Status Indicator, Title, and Position Indicator sit *inline* with the rules at the same vertical center — the rule visually breaks on either side of each label, leaving a small gap so the label appears to interrupt the line (e.g. `──── Untitled ────`).
+- Status Indicator: on the Top Rule, 2em from the left. Defaults to `[ ]`; becomes `[*]` when the file is dirty. Brackets render in `dark`; the `*` renders in `bright`.
+- Title: centered horizontally on the Top Rule. Defaults to `Untitled`. Renders in `highlight`.
+- Position Indicator: on the Bottom Rule, 2em from the left, formatted `row:column` (e.g. `3:19`). Renders in `dark`.
+- The background is blue (`background` in the css and #0000aa).
+- The foreground is yellow (`foreground` in the css and #ffff55).
+- The top and bottom rules are white (`highlight` in the css and #ffffff).
+- The tab key should indent a line and subsequent lines should be indented to the same level.
+
+
+## Help Menu
+
+The help menu is a modal. It shows each of the keyboard shortcuts. Clicking on any shortcut runs that shortcuts action. This allows mobile users to open a menu by clicking on the edit indicator and then perform any action with a click instead of a keystroke. Designed mainly for systems without keyboards, like smart phones.
+
+When the help modal is opened the background is darkened.
+
+The modal has a title of "HELP" then lists each of the keyboard shortcuts offered by the program.
+
+At the bottom it says "Press F1 or Esc to close". Clicking or tapping outside of the modal also closes.
+
+
+## PWA
+
+Blue has a manifest so that it can run as a PWA.
+
+
+## Mouse / Finger Navigation (TODO)
+
+Blue opens the help modal when you click on the Status Indicator ([*]).
+
+Clicking any of the keyboard shortcuts will close the modal and run that action.
