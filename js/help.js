@@ -1,5 +1,25 @@
+import { handleTabKey } from "./keys.js";
+import {
+  newFile,
+  openFileDialog,
+  saveFile,
+  saveFileAs,
+  renameFile,
+} from "./file.js";
+
 const editor = document.getElementById("editor");
 const help = document.getElementById("help");
+
+const actions = {
+  help: () => toggleHelp(),
+  rename: () => renameFile(),
+  new: () => newFile(),
+  open: () => openFileDialog(),
+  save: () => saveFile(),
+  saveAs: () => saveFileAs(),
+  indent: () => handleTabKey({ preventDefault: () => {}, shiftKey: false }),
+  outdent: () => handleTabKey({ preventDefault: () => {}, shiftKey: true }),
+};
 
 export function isHelpOpen() {
   return help?.getAttribute("data-open") === "true";
@@ -49,11 +69,23 @@ function renderHelpKeys() {
   });
 }
 
+function runHelpAction(name) {
+  const action = actions[name];
+  if (!action) return;
+  if (name !== "help") closeHelp();
+  action();
+}
+
 export function initHelp() {
   help?.addEventListener("click", (event) => {
     if (event.target === help) closeHelp();
   });
   const statusDirty = document.getElementById("status-dirty");
   statusDirty?.addEventListener("click", () => openHelp());
+  document.querySelectorAll("#help-panel tr[data-action]").forEach((row) => {
+    row.addEventListener("click", () => {
+      runHelpAction(row.getAttribute("data-action"));
+    });
+  });
   renderHelpKeys();
 }

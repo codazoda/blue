@@ -197,6 +197,14 @@ body {
   vertical-align: top;
 }
 
+#help-panel tr[data-action] {
+  cursor: pointer;
+}
+
+#help-panel tr[data-action]:hover td {
+  color: var(--editor-highlight);
+}
+
 #help-panel td.key {
   color: var(--editor-dark);
   white-space: nowrap;

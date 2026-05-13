@@ -121,6 +121,7 @@ Clicking any of the keyboard shortcuts will close the modal and run that action.
 - [x] Remove new line from the help menu.
 - [x] Make the keyboard shortcuts the dark color.
 - [x] Remove the chord options from the help dialog (leave the key combinations).
+- [x] Make the help menu items clickable to do that action, like a menu.
 - [ ] Add a config option to blue.json to support an open-file URL (see ../open-file).
 - [ ] If the url setting is set the save feature should save the file via that API.
 - [ ] If the url setting is set the open feature should list all files in a modal similar to the help modal.
