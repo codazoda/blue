@@ -69,6 +69,7 @@ body {
   font-size: 0.9rem;
   background: var(--editor-bg);
   z-index: 1;
+  cursor: pointer;
 }
 
 #status-dirty-box {

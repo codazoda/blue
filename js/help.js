@@ -28,4 +28,6 @@ export function initHelp() {
   help?.addEventListener("click", (event) => {
     if (event.target === help) closeHelp();
   });
+  const statusDirty = document.getElementById("status-dirty");
+  statusDirty?.addEventListener("click", () => openHelp());
 }

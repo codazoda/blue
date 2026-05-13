@@ -112,7 +112,7 @@ Clicking any of the keyboard shortcuts will close the modal and run that action.
 
 ## TODO
 
-- [ ] Clicking the status area should open the help dialog.
+- [x] Clicking the status area should open the help dialog.
 - [ ] Add a config option to blue.json to support an open-file URL (see ../open-file).
 - [ ] If the url setting is set the save feature should save the file via that API.
 - [ ] If the url setting is set the open feature should list all files in a modal similar to the help modal.
