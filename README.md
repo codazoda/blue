@@ -108,3 +108,12 @@ Blue has a manifest so that it can run as a PWA.
 Blue opens the help modal when you click on the Status Indicator ([*]).
 
 Clicking any of the keyboard shortcuts will close the modal and run that action.
+
+
+## TODO
+
+- [ ] Clicking the status area should open the help dialog.
+- [ ] Add a config option to blue.json to support an open-file URL (see ../open-file).
+- [ ] If the url setting is set the save feature should save the file via that API.
+- [ ] If the url setting is set the open feature should list all files in a modal similar to the help modal.
+- [ ] There should be a search box at the top of the file modal that narrows to the list to any that match.
