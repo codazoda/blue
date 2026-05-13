@@ -198,7 +198,7 @@ body {
 }
 
 #help-panel td.key {
-  color: var(--editor-highlight);
+  color: var(--editor-dark);
   white-space: nowrap;
   width: 12rem;
   text-align: right;
