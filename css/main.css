@@ -201,6 +201,11 @@ body {
   color: var(--editor-highlight);
   white-space: nowrap;
   width: 12rem;
+  text-align: right;
+}
+
+#help-panel td.action {
+  width: auto;
 }
 
 #help-panel .hint {

@@ -113,7 +113,7 @@ Clicking any of the keyboard shortcuts will close the modal and run that action.
 ## TODO
 
 - [x] Clicking the status area should open the help dialog.
-- [ ] Swap actions, like "Open file", to the left of the help dialog, key combinations to the right (like a menu).
+- [x] Swap actions, like "Open file", to the left of the help dialog, key combinations to the right (like a menu).
 - [ ] Use "Help" instead of "Toggle this help" and "Rename" instead of "Rename current file".
 - [ ] Use symbols instead of Cmd/Ctrl for key combinations in the help dialog (i.e. ⌘ S).
 - [ ] Add a config option to blue.json to support an open-file URL (see ../open-file).
